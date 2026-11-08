@@ -147,7 +147,8 @@ function load(d){
     if(D){q=D.r[i].q;p=D.r[i].p}else if(P){p=P.r[i].p}
     tr.querySelector('.q').value=q;tr.querySelector('.p').value=p;
   });
-  $('st').textContent=D?'Saved day (editing)':'New day';
+  var t=fmt(new Date());
+  $('st').textContent=(d===t?'Today · ':'')+(D?'Saved day (editing)':'New day')+(!D&&pd&&addDay(pd,1)!==d?' · last saved '+pd:'');
   calc();
 }
 
@@ -277,8 +278,13 @@ $('rdl').onclick=async function(){
     $('rmsg').textContent='Downloaded ✓ Check your Downloads. '+fb;
   }catch(e){$('rmsg').textContent='Could not save here. '+fb}
 };
-var ks=Object.keys(S.days).sort();
-load(ks.length?addDay(ks[ks.length-1],1):fmt(new Date()));
+var lastToday=fmt(new Date());
+document.addEventListener('visibilitychange',function(){
+  if(document.hidden)return;
+  var t=fmt(new Date());
+  if(t!==lastToday){var old=lastToday;lastToday=t;if(cur===old&&S.days[old])load(t)}
+});
+load(lastToday);
 renderHist();
 </script>
 </body>
