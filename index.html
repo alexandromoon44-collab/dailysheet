@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Daily Sheet – ទំនិញប្រចាំថ្ងៃ</title>
+<style>
+:root{--bg:#f4f6fb;--card:#fff;--ink:#14182a;--mute:#667089;--line:#e3e7f0;--acc:#4f6bff;--ok:#12a36b;--bad:#e5484d;--input:#f0f3fa;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1020;--card:#161a2e;--ink:#eef1fb;--mute:#97a0bd;--line:#252a45;--acc:#7b8dff;--ok:#2ed39a;--bad:#ff6b70;--input:#1d2240;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0d1020;--card:#161a2e;--ink:#eef1fb;--mute:#97a0bd;--line:#252a45;--acc:#7b8dff;--ok:#2ed39a;--bad:#ff6b70;--input:#1d2240;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Khmer","Khmer OS Battambang","Leelawadee UI",sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:20px 16px 48px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+h1{font-size:22px;margin:0;letter-spacing:-.02em}
+h1 span{color:var(--acc)}
+h2{font-size:15px;margin:0 0 10px}
+.sub{color:var(--mute);font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:14px}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-bottom:14px}
+.stat .l{color:var(--mute);font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+.stat .v{font-size:24px;font-weight:700;margin-top:4px;letter-spacing:-.02em}
+.ok{color:var(--ok)}.bad{color:var(--bad)}
+.bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+input{padding:9px 10px;border-radius:9px;border:1px solid var(--line);background:var(--input);color:var(--ink);font:inherit}
+input:focus{outline:2px solid var(--acc);outline-offset:1px}
+button{font:inherit;cursor:pointer;border-radius:9px;border:1px solid var(--line);background:var(--input);color:var(--ink);padding:9px 14px}
+button.pri{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
+button.sm{padding:3px 9px}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:560px}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:12px;color:var(--mute);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+td.r,th.r{text-align:right}
+td input{width:100%}
+.nm{min-width:130px}.q,.p{min-width:100px}
+tfoot td{font-weight:700;font-size:16px;border-bottom:0}
+.empty{color:var(--mute);text-align:center;padding:20px}
+#msg{color:var(--ok);font-size:13px;min-height:20px;margin-top:8px}
+#ov{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:calc(16px + env(safe-area-inset-top,0px)) 16px calc(16px + env(safe-area-inset-bottom,0px));z-index:50}
+#ov[hidden]{display:none}
+#ov .box{background:var(--card);border-radius:14px;padding:12px;max-width:520px;max-height:100%;overflow:auto}
+#ov img{width:100%;height:auto;max-height:70vh;object-fit:contain;border-radius:8px;display:block;background:#fff}
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.hist{min-width:440px}
+.grid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+@media (min-width:1100px){.wrap{max-width:1000px}}
+@media (max-width:640px){
+ .wrap{padding-top:14px}
+ h1{font-size:18px}
+ .grid{grid-template-columns:repeat(2,1fr)}
+ .grid .card:last-child{grid-column:1/-1}
+ .stat .v{font-size:20px}
+ .card{padding:12px}
+ input,button{min-height:44px;font-size:16px}
+ button.sm{min-height:36px;font-size:14px}
+ .nm,.q,.p{min-width:0}
+ .bar #dd{flex:1;min-width:0}
+ .acts button{flex:1 1 100%}
+ .sheet,.sheet thead,.sheet tbody,.sheet tfoot,.sheet tr,.sheet td{display:block}
+ .sheet{min-width:0}
+ .sheet thead{display:none}
+ .sheet tbody tr{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;padding:12px 0;border-bottom:1px solid var(--line)}
+ .sheet td{border:0;padding:0;white-space:normal}
+ .sheet tbody td:nth-child(1){display:none}
+ .sheet tbody td:nth-child(2){grid-column:1/-1}
+ .sheet tbody td:nth-child(3)::before{content:"Weight · ទម្ងន់ (kg)"}
+ .sheet tbody td:nth-child(4)::before{content:"Price · តម្លៃ/kg (៛)"}
+ .sheet tbody td:nth-child(3)::before,.sheet tbody td:nth-child(4)::before{display:block;font-size:12px;color:var(--mute);margin-bottom:4px}
+ .sheet tbody td:nth-child(5){grid-column:1/-1;display:flex;justify-content:space-between;align-items:baseline;font-weight:700;font-size:18px}
+ .sheet tbody td:nth-child(5)::before{content:"Total · សរុប";font-size:12px;font-weight:400;color:var(--mute)}
+ .sheet tfoot tr{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 10px;padding-top:12px}
+ .sheet tfoot td:nth-child(1),.sheet tfoot td:nth-child(4){display:none}
+ .sheet tfoot td:nth-child(3){order:3;flex-basis:100%;font-size:14px;font-weight:400;color:var(--mute)}
+ .sheet tfoot td:nth-child(5){font-size:20px;color:var(--acc)}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div><h1>Daily <span>Sheet</span> · ទំនិញប្រចាំថ្ងៃ</h1><div class="sub">Enter kg and price for 5 goods · total in Khmer riel (៛)</div></div>
+  <button id="theme">◐ Theme</button>
+</header>
+
+<div class="grid" id="stats"></div>
+
+<section class="card">
+  <div class="bar">
+    <button id="prev" title="Previous day">◀</button>
+    <input type="date" id="dd">
+    <button id="nextv" title="Next day">▶</button>
+    <span class="sub" id="st"></span>
+  </div>
+  <div class="scroll"><table class="sheet">
+    <thead><tr><th>#</th><th>Goods · ទំនិញ</th><th>Weight · ទម្ងន់ (kg)</th><th>Price · តម្លៃ/kg (៛)</th><th class="r">Total · សរុប</th></tr></thead>
+    <tbody id="rows"></tbody>
+    <tfoot><tr><td></td><td>Total · សរុប</td><td id="fq"></td><td></td><td class="r" id="fv"></td></tr></tfoot>
+  </table></div>
+  <div class="bar acts" style="margin-top:14px">
+    <button class="pri" id="next">Save &amp; go to next day · រក្សាទុក ហើយទៅថ្ងៃបន្ទាប់</button>
+    <button id="save">Save only</button>
+    <button id="pic">📷 Save report as picture · រក្សាទុករូបភាព</button>
+  </div>
+  <div id="msg"></div>
+</section>
+
+<section class="card">
+  <h2>Saved days · History</h2>
+  <div class="scroll"><table class="hist">
+    <thead><tr><th>Date</th><th>Total kg</th><th>Total ៛</th><th class="r">Change vs previous</th><th></th></tr></thead>
+    <tbody id="hrows"></tbody>
+  </table></div>
+  <div class="sub" id="allsum" style="margin-top:8px"></div>
+</section>
+</div>
+
+<div id="ov" hidden><div class="box"><img id="rimg" alt="Daily report"><div class="bar" style="justify-content:center;margin:12px 0 0"><button class="pri" id="rdl">Save picture</button><button id="rclose">Close</button></div><div class="sub" id="rmsg" style="text-align:center;margin-top:8px">On a phone you can also press and hold the picture and choose Save image.</div></div></div>
+<script>
+var KEY='dailysheet-v1',N=5,cur='';
+var S={names:['ត្រសក់','ត្រឡាច','ម្រះ','សណ្ដែកគួ','ត្រប់'],days:{}};
+try{var s=localStorage.getItem(KEY);if(s){var o=JSON.parse(s);if(o&&o.days&&o.names)S=o}}catch(e){}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function $(i){return document.getElementById(i)}
+function r2(n){return Math.round(n*100)/100}
+function riel(n){return '៛'+Math.round(n).toLocaleString('en-US')}
+function sg(n){return (n>0?'+':n<0?'−':'')+riel(Math.abs(n))}
+function cl(n){return n>0?'ok':n<0?'bad':''}
+function pad(n){return ('0'+n).slice(-2)}
+function fmt(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+function addDay(s,k){var p=s.split('-');return fmt(new Date(+p[0],+p[1]-1,+p[2]+k))}
+function prevOf(d){var k=Object.keys(S.days).filter(function(x){return x<d}).sort();return k.length?k[k.length-1]:null}
+function trs(){return document.querySelectorAll('#rows tr')}
+
+for(var i=0;i<N;i++){
+  $('rows').insertAdjacentHTML('beforeend','<tr><td>'+(i+1)+'</td><td><input class="nm" maxlength="30"></td><td><input class="q" type="number" min="0" step="any" inputmode="decimal"></td><td><input class="p" type="number" min="0" step="any" inputmode="decimal"></td><td class="r lt">៛0</td></tr>');
+}
+
+function load(d){
+  cur=d;$('dd').value=d;
+  var D=S.days[d],pd=prevOf(d),P=pd?S.days[pd]:null;
+  trs().forEach(function(tr,i){
+    tr.querySelector('.nm').value=S.names[i];
+    var q='',p='';
+    if(D){q=D.r[i].q;p=D.r[i].p}else if(P){p=P.r[i].p}
+    tr.querySelector('.q').value=q;tr.querySelector('.p').value=p;
+  });
+  $('st').textContent=D?'Saved day (editing)':'New day';
+  calc();
+}
+
+function calc(){
+  var tq=0,tv=0;
+  trs().forEach(function(tr){
+    var q=parseFloat(tr.querySelector('.q').value)||0,p=parseFloat(tr.querySelector('.p').value)||0;
+    tq+=q;tv+=q*p;tr.querySelector('.lt').textContent=riel(q*p);
+  });
+  tq=r2(tq);
+  $('fq').textContent=tq+' kg';$('fv').textContent=riel(tv);
+  var pd=prevOf(cur),dv=pd?tv-S.days[pd].tv:null;
+  var c=[['Total weight',tq+' kg',''],['Total for this day',riel(tv),''],['Change vs previous day',dv===null?'—':sg(dv),dv===null?'':cl(dv)]];
+  $('stats').innerHTML=c.map(function(x){return '<div class="card stat" style="margin:0"><div class="l">'+x[0]+'</div><div class="v '+x[2]+'">'+x[1]+'</div></div>'}).join('');
+}
+
+function snap(){
+  var rows=[],tq=0,tv=0;
+  trs().forEach(function(tr,i){
+    S.names[i]=tr.querySelector('.nm').value.trim()||('Item '+(i+1));
+    var q=r2(parseFloat(tr.querySelector('.q').value)||0),p=parseFloat(tr.querySelector('.p').value)||0;
+    rows.push({q:q,p:p});tq+=q;tv+=q*p;
+  });
+  S.days[cur]={r:rows,tq:r2(tq),tv:tv};
+  persist();renderHist();
+}
+
+function renderHist(){
+  var ks=Object.keys(S.days).sort(),all=0;
+  ks.forEach(function(k){all+=S.days[k].tv});
+  $('hrows').innerHTML=ks.length?ks.slice().reverse().map(function(k){
+    var p=prevOf(k),D=S.days[k],dv=p?D.tv-S.days[p].tv:null;
+    return '<tr><td><button class="sm" data-l="'+k+'">'+k+'</button></td><td>'+D.tq+' kg</td><td><b>'+riel(D.tv)+'</b></td><td class="r '+(dv===null?'':cl(dv))+'">'+(dv===null?'—':sg(dv))+'</td><td><button class="sm" data-d="'+k+'">✕</button></td></tr>';
+  }).join(''):'<tr><td colspan="5" class="empty">No saved days yet.</td></tr>';
+  $('allsum').textContent=ks.length?ks.length+' day(s) saved · sum of all days: '+riel(all):'';
+}
+
+$('rows').addEventListener('input',calc);
+$('dd').onchange=function(){if($('dd').value){load($('dd').value);$('msg').textContent=''}};
+$('prev').onclick=function(){load(addDay(cur,-1));$('msg').textContent=''};
+$('nextv').onclick=function(){load(addDay(cur,1));$('msg').textContent=''};
+$('save').onclick=function(){snap();load(cur);$('msg').textContent='Saved '+cur};
+$('next').onclick=function(){var d=cur;snap();load(addDay(d,1));$('msg').textContent='Saved '+d+' ✓ Now entering '+cur};
+$('hrows').addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b)return;
+  if(b.dataset.l){load(b.dataset.l);$('msg').textContent='';window.scrollTo({top:0,behavior:'smooth'})}
+  if(b.dataset.d){delete S.days[b.dataset.d];persist();renderHist();load(cur)}
+});
+(function(){
+  var K='sheet-theme',r=document.documentElement,mode=null;
+  try{mode=localStorage.getItem(K)}catch(e){}
+  if(mode==='dark'||mode==='light')r.setAttribute('data-theme',mode);else mode=null;
+  $('theme').onclick=function(){
+    var sys=!!(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches);
+    var dark=mode?mode==='dark':sys;
+    mode=dark?'light':'dark';
+    r.setAttribute('data-theme',mode);
+    try{localStorage.setItem(K,mode)}catch(e){}
+  };
+})();
+
+var png=null,pngName='';
+function drawReport(){
+  var rows=[],tq=0,tv=0;
+  trs().forEach(function(tr){
+    var q=parseFloat(tr.querySelector('.q').value)||0,p=parseFloat(tr.querySelector('.p').value)||0;
+    rows.push({n:tr.querySelector('.nm').value||'-',q:q,p:p,t:q*p});tq+=q;tv+=q*p;
+  });
+  var pd=prevOf(cur),dv=pd?tv-S.days[pd].tv:null;
+  var W=900,H=230+rows.length*70+130,sc=2,c=document.createElement('canvas');
+  c.width=W*sc;c.height=H*sc;
+  var g=c.getContext('2d');g.scale(sc,sc);
+  var F="'Noto Sans Khmer','Khmer OS Battambang','Leelawadee UI',system-ui,sans-serif";
+  g.fillStyle='#fff';g.fillRect(0,0,W,H);
+  g.fillStyle='#4f6bff';g.fillRect(0,0,W,12);
+  g.textBaseline='alphabetic';g.fillStyle='#14182a';g.font='700 36px '+F;
+  g.fillText('Daily Report · របាយការណ៍ប្រចាំថ្ងៃ',40,80);
+  g.font='500 24px '+F;g.fillStyle='#667089';g.fillText('Date: '+cur,40,120);
+  var y=170;
+  g.font='600 20px '+F;g.fillText('Goods',40,y);
+  g.textAlign='right';g.fillText('kg',470,y);g.fillText('៛ / kg',640,y);g.fillText('Total',860,y);g.textAlign='left';
+  g.strokeStyle='#e3e7f0';g.lineWidth=2;g.beginPath();g.moveTo(40,y+16);g.lineTo(860,y+16);g.stroke();
+  y+=60;
+  rows.forEach(function(r){
+    g.fillStyle='#14182a';g.font='600 26px '+F;g.fillText(r.n,40,y);
+    g.font='500 26px '+F;g.textAlign='right';
+    g.fillText(String(r2(r.q)),470,y);g.fillText(Math.round(r.p).toLocaleString('en-US'),640,y);g.fillText(riel(r.t),860,y);
+    g.textAlign='left';
+    g.strokeStyle='#eef1f7';g.beginPath();g.moveTo(40,y+22);g.lineTo(860,y+22);g.stroke();
+    y+=70;
+  });
+  y+=10;
+  g.fillStyle='#14182a';g.font='700 28px '+F;g.fillText('Total',40,y);
+  g.textAlign='right';g.fillText(r2(tq)+' kg',470,y);
+  g.fillStyle='#4f6bff';g.font='700 34px '+F;g.fillText(riel(tv),860,y);
+  g.textAlign='left';
+  if(dv!==null){y+=50;g.font='500 22px '+F;g.fillStyle=dv>=0?'#12a36b':'#e5484d';g.fillText('Change vs '+pd+': '+sg(dv),40,y)}
+  return c;
+}
+$('pic').onclick=function(){
+  var c=drawReport();png=null;pngName='daily-'+cur+'.png';
+  $('rimg').src=c.toDataURL('image/png');
+  c.toBlob(function(b){png=b},'image/png');
+  $('rmsg').textContent='On a phone you can also press and hold the picture and choose Save image.';
+  $('ov').hidden=false;
+};
+$('rclose').onclick=function(){$('ov').hidden=true};
+$('rdl').onclick=async function(){
+  var fb='Press and hold the picture, then choose Save image.';
+  if(!png){$('rmsg').textContent='Please try again in a moment.';return}
+  try{
+    var d=await claude.use('downloads');
+    if(!d){$('rmsg').textContent=fb;return}
+    await d.save({filename:pngName,data:png});
+    $('rmsg').textContent='Saved ✓';
+  }catch(e){
+    $('rmsg').textContent=(e&&e.code==='declined')?'Cancelled.':'Could not save here. '+fb;
+  }
+};
+var ks=Object.keys(S.days).sort();
+load(ks.length?addDay(ks[ks.length-1],1):fmt(new Date()));
+renderHist();
+</script>
+</body>
+</html>
