@@ -100,8 +100,7 @@ tfoot td{font-weight:700;font-size:16px;border-bottom:0}
     <tfoot><tr><td></td><td>Total · សរុប</td><td id="fq"></td><td></td><td class="r" id="fv"></td></tr></tfoot>
   </table></div>
   <div class="bar acts" style="margin-top:14px">
-    <button class="pri" id="next">Save &amp; go to next day · រក្សាទុក ហើយទៅថ្ងៃបន្ទាប់</button>
-    <button id="save">Save only</button>
+    <button class="pri" id="save">Save · រក្សាទុក</button>
     <button id="pic">📷 Save report as picture · រក្សាទុករូបភាព</button>
   </div>
   <div id="msg"></div>
@@ -190,8 +189,8 @@ $('rows').addEventListener('input',calc);
 $('dd').onchange=function(){if($('dd').value){load($('dd').value);$('msg').textContent=''}};
 $('prev').onclick=function(){load(addDay(cur,-1));$('msg').textContent=''};
 $('nextv').onclick=function(){load(addDay(cur,1));$('msg').textContent=''};
-$('save').onclick=function(){snap();load(cur);$('msg').textContent='Saved '+cur};
-$('next').onclick=function(){var d=cur;snap();load(addDay(d,1));$('msg').textContent='Saved '+d+' ✓ Now entering '+cur};
+$('save').onclick=function(){snap();load(cur);$('msg').textContent='Saved '+cur+' ✓'};
+
 $('hrows').addEventListener('click',function(e){
   var b=e.target.closest('button');if(!b)return;
   if(b.dataset.l){load(b.dataset.l);$('msg').textContent='';window.scrollTo({top:0,behavior:'smooth'})}
