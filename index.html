@@ -221,6 +221,7 @@ function drawReport(){
   c.width=W*sc;c.height=H*sc;
   var g=c.getContext('2d');g.scale(sc,sc);
   var F="'Noto Sans Khmer','Khmer OS Battambang','Leelawadee UI',system-ui,sans-serif";
+  function rr(pre,s,x,y,gap){g.textAlign='left';var w=g.measureText(s).width;g.fillText(s,x-w,y);if(pre)g.fillText(pre,x-w-gap,y)}
   g.fillStyle='#fff';g.fillRect(0,0,W,H);
   g.fillStyle='#4f6bff';g.fillRect(0,0,W,12);
   g.textBaseline='alphabetic';g.fillStyle='#14182a';g.font='700 36px '+F;
@@ -228,13 +229,14 @@ function drawReport(){
   g.font='500 24px '+F;g.fillStyle='#667089';g.fillText('Date: '+cur,40,120);
   var y=170;
   g.font='600 20px '+F;g.fillText('Goods',40,y);
-  g.textAlign='right';g.fillText('kg',470,y);g.fillText('៛ / kg',640,y);g.fillText('Total',860,y);g.textAlign='left';
+  g.textAlign='right';g.fillText('kg',470,y);g.fillText('Total',860,y);rr('៛','/ kg',640,y,22);g.textAlign='left';
   g.strokeStyle='#e3e7f0';g.lineWidth=2;g.beginPath();g.moveTo(40,y+16);g.lineTo(860,y+16);g.stroke();
   y+=60;
   rows.forEach(function(r){
     g.fillStyle='#14182a';g.font='600 26px '+F;g.fillText(r.n,40,y);
     g.font='500 26px '+F;g.textAlign='right';
-    g.fillText(String(r2(r.q)),470,y);g.fillText(Math.round(r.p).toLocaleString('en-US'),640,y);g.fillText(riel(r.t),860,y);
+    g.fillText(String(r2(r.q)),470,y);g.fillText(Math.round(r.p).toLocaleString('en-US'),640,y);
+    rr('៛',Math.round(r.t).toLocaleString('en-US'),860,y,22);
     g.textAlign='left';
     g.strokeStyle='#eef1f7';g.beginPath();g.moveTo(40,y+22);g.lineTo(860,y+22);g.stroke();
     y+=70;
@@ -242,7 +244,7 @@ function drawReport(){
   y+=10;
   g.fillStyle='#14182a';g.font='700 28px '+F;g.fillText('Total',40,y);
   g.textAlign='right';g.fillText(r2(tq)+' kg',470,y);
-  g.fillStyle='#4f6bff';g.font='700 34px '+F;g.fillText(riel(tv),860,y);
+  g.fillStyle='#4f6bff';g.font='700 34px '+F;rr('៛',Math.round(tv).toLocaleString('en-US'),860,y,30);
   g.textAlign='left';
   if(dv!==null){y+=50;g.font='500 22px '+F;g.fillStyle=dv>=0?'#12a36b':'#e5484d';g.fillText('Change vs '+pd+': '+sg(dv),40,y)}
   return c;
@@ -258,14 +260,22 @@ $('rclose').onclick=function(){$('ov').hidden=true};
 $('rdl').onclick=async function(){
   var fb='Press and hold the picture, then choose Save image.';
   if(!png){$('rmsg').textContent='Please try again in a moment.';return}
-  try{
-    var d=await claude.use('downloads');
-    if(!d){$('rmsg').textContent=fb;return}
-    await d.save({filename:pngName,data:png});
-    $('rmsg').textContent='Saved ✓';
-  }catch(e){
-    $('rmsg').textContent=(e&&e.code==='declined')?'Cancelled.':'Could not save here. '+fb;
+  var d=null;
+  try{if(typeof claude!=='undefined')d=await claude.use('downloads')}catch(e){d=null}
+  if(d){
+    try{await d.save({filename:pngName,data:png});$('rmsg').textContent='Saved ✓';return}
+    catch(e){if(e&&e.code==='declined'){$('rmsg').textContent='Cancelled.';return}}
   }
+  try{
+    var f=new File([png],pngName,{type:'image/png'});
+    if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:pngName});$('rmsg').textContent='Done ✓';return}
+  }catch(e){if(e&&e.name==='AbortError'){$('rmsg').textContent='Cancelled.';return}}
+  try{
+    var u=URL.createObjectURL(png),a=document.createElement('a');
+    a.href=u;a.download=pngName;document.body.appendChild(a);a.click();a.remove();
+    setTimeout(function(){URL.revokeObjectURL(u)},4000);
+    $('rmsg').textContent='Downloaded ✓ Check your Downloads. '+fb;
+  }catch(e){$('rmsg').textContent='Could not save here. '+fb}
 };
 var ks=Object.keys(S.days).sort();
 load(ks.length?addDay(ks[ks.length-1],1):fmt(new Date()));
