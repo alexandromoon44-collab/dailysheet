@@ -45,6 +45,10 @@ tfoot td{font-weight:700;font-size:16px;border-bottom:0}
 #ov img{width:100%;height:auto;max-height:70vh;object-fit:contain;border-radius:8px;display:block;background:#fff}
 .wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .hist{min-width:440px}
+.pbar{height:8px;background:var(--input);border-radius:8px;overflow:hidden;margin:8px 0 12px}
+.pbar i{display:block;height:100%;width:0;background:var(--acc)}
+select{padding:9px 10px;border-radius:9px;border:1px solid var(--line);background:var(--input);color:var(--ink);font:inherit;max-width:100%}
+@media (max-width:640px){select{min-height:44px;font-size:16px}}
 .grid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
 @media (min-width:1100px){.wrap{max-width:1000px}}
 @media (max-width:640px){
@@ -104,6 +108,19 @@ tfoot td{font-weight:700;font-size:16px;border-bottom:0}
     <button id="pic">📷 Save report as picture · រក្សាទុករូបភាព</button>
   </div>
   <div id="msg"></div>
+</section>
+
+<section class="card" id="season">
+  <h2>Season · រដូវ</h2>
+  <div class="bar"><select id="ssel" hidden></select><button class="pri" id="sstart">▶ Start season · ចាប់ផ្តើមរដូវ</button><button id="send" hidden>■ End season · បញ្ចប់រដូវ</button><button id="sedit" hidden>Edit</button><button id="sdel" hidden>Delete</button></div>
+  <div id="sform" hidden class="card" style="background:var(--input)">
+    <div class="bar"><div id="fN"><label class="sub">Name</label><br><input id="sn" maxlength="30" placeholder="e.g. Rainy season"></div><div id="fS"><label class="sub">Start date</label><br><input type="date" id="ss"></div><div id="fE"><label class="sub">End date</label><br><input type="date" id="sedate"></div></div>
+    <div class="bar" style="margin-bottom:0"><button class="pri" id="sok">Save season</button><button id="scancel">Cancel</button><span class="sub" id="smsg" style="color:var(--bad)"></span></div>
+  </div>
+  <div class="sub" id="sinfo"></div>
+  
+  <div class="grid" id="sstats"></div>
+  <div class="scroll"><table style="min-width:420px"><thead><tr><th>Goods</th><th>Total kg</th><th class="r">Total ៛</th></tr></thead><tbody id="sgoods"></tbody></table></div>
 </section>
 
 <section class="card">
@@ -172,7 +189,7 @@ function snap(){
     rows.push({q:q,p:p});tq+=q;tv+=q*p;
   });
   S.days[cur]={r:rows,tq:r2(tq),tv:tv};
-  persist();renderHist();
+  persist();renderHist();renderSeason();
 }
 
 function renderHist(){
@@ -194,7 +211,7 @@ $('save').onclick=function(){snap();load(cur);$('msg').textContent='Saved '+cur+
 $('hrows').addEventListener('click',function(e){
   var b=e.target.closest('button');if(!b)return;
   if(b.dataset.l){load(b.dataset.l);$('msg').textContent='';window.scrollTo({top:0,behavior:'smooth'})}
-  if(b.dataset.d){delete S.days[b.dataset.d];persist();renderHist();load(cur)}
+  if(b.dataset.d){delete S.days[b.dataset.d];persist();renderHist();load(cur);renderSeason()}
 });
 (function(){
   var K='sheet-theme',r=document.documentElement,mode=null;
@@ -277,6 +294,70 @@ $('rdl').onclick=async function(){
     $('rmsg').textContent='Downloaded ✓ Check your Downloads. '+fb;
   }catch(e){$('rmsg').textContent='Could not save here. '+fb}
 };
+S.seasons=S.seasons||[];
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function seasonOf(){var a=S.seasons.filter(function(x){return x.id===S.sel})[0];return a||activeSeason()||S.seasons[S.seasons.length-1]||null}
+function activeSeason(){return S.seasons.filter(function(x){return !x.end})[0]||null}
+S.seasons.forEach(function(x){if(x.days&&x.end===undefined){var e=addDay(x.start,x.days-1);x.end=e>=fmt(new Date())?null:e;delete x.days}});
+function renderSeason(){
+  var se=seasonOf(),act=activeSeason(),sel=$('ssel');
+  sel.innerHTML=S.seasons.map(function(x){return '<option value="'+x.id+'"'+(se&&x.id===se.id?' selected':'')+'>'+esc(x.name)+' ('+x.start+' → '+(x.end||'now')+')</option>'}).join('');
+  sel.hidden=!S.seasons.length;$('sstart').hidden=!!act;$('send').hidden=!act;$('sedit').hidden=!se;$('sdel').hidden=!se;
+  if(!se){
+    $('sinfo').textContent='No season yet. Press "▶ Start season" to begin counting your total kg.';$('sstats').innerHTML='';$('sgoods').innerHTML='';return;
+  }
+  var t=fmt(new Date()),end=se.end||t,tq=0,tv=0,n=0,gk=[0,0,0,0,0],gv=[0,0,0,0,0];
+  Object.keys(S.days).forEach(function(k){
+    if(k<se.start||k>end)return;
+    var D=S.days[k];n++;tq+=D.tq;tv+=D.tv;
+    D.r.forEach(function(r,i){gk[i]+=r.q;gv[i]+=r.q*r.p});
+  });
+  var len=Math.max(0,Math.round((Date.parse(end)-Date.parse(se.start))/86400000)+1);
+  var st=se.end?'Ended · '+len+' days':(t<se.start?'Not started yet':'Running · day '+len);
+  $('sinfo').textContent=se.name+' · '+se.start+' → '+(se.end||'now')+' · '+st;
+  var c=[['Total kg this season',r2(tq)+' kg'],['Total ៛ this season',riel(tv)],['Days saved',n+' of '+len],['Average per saved day',(n?r2(tq/n):0)+' kg']];
+  $('sstats').innerHTML=c.map(function(x){return '<div class="card stat" style="margin:0"><div class="l">'+x[0]+'</div><div class="v">'+x[1]+'</div></div>'}).join('');
+  $('sgoods').innerHTML=S.names.map(function(nm,i){return '<tr><td><b>'+esc(nm)+'</b></td><td>'+r2(gk[i])+' kg</td><td class="r">'+riel(gv[i])+'</td></tr>'}).join('');
+}
+var fm=null,fid=null;
+function showForm(mode,se){
+  fm=mode;fid=se?se.id:null;
+  var t=fmt(new Date());
+  $('sform').hidden=false;
+  $('fN').hidden=(mode==='end');$('fS').hidden=(mode==='end');$('fE').hidden=(mode==='start');
+  $('sn').value=se?se.name:'';
+  $('ss').value=se?se.start:t;
+  $('sedate').value=se&&se.end?se.end:(mode==='end'?t:'');
+  $('sok').textContent=mode==='start'?'Start season':mode==='end'?'End season':'Save changes';
+  $('smsg').textContent='';
+}
+$('sstart').onclick=function(){showForm('start',null)};
+$('send').onclick=function(){var a=activeSeason();if(a)showForm('end',a)};
+$('sedit').onclick=function(){var se=seasonOf();if(se)showForm('edit',se)};
+$('scancel').onclick=function(){$('sform').hidden=true};
+$('sok').onclick=function(){
+  var msg=$('smsg');
+  if(fm==='start'){
+    var start=$('ss').value;
+    if(!start){msg.textContent='Please choose a start date.';return}
+    if(activeSeason()){msg.textContent='End the current season first.';return}
+    var id=Date.now();
+    S.seasons.push({id:id,name:$('sn').value.trim()||('Season '+(S.seasons.length+1)),start:start,end:null});S.sel=id;
+  }else{
+    var se=S.seasons.filter(function(x){return x.id===fid})[0];if(!se)return;
+    var end=$('sedate').value,st=fm==='edit'?$('ss').value:se.start;
+    if(!st){msg.textContent='Please choose a start date.';return}
+    if(fm==='end'&&!end){msg.textContent='Please choose an end date.';return}
+    if(end&&end<st){msg.textContent='End date cannot be before the start date.';return}
+    if(!end){var o=activeSeason();if(o&&o.id!==se.id){msg.textContent='Another season is still running. End it first.';return}}
+    if(fm==='edit'){se.name=$('sn').value.trim()||se.name;se.start=st}
+    se.end=end||null;S.sel=se.id;
+  }
+  persist();$('sform').hidden=true;renderSeason();
+};
+$('ssel').onchange=function(){S.sel=+$('ssel').value;persist();renderSeason()};
+$('sdel').onclick=function(){var se=seasonOf();if(!se)return;S.seasons=S.seasons.filter(function(x){return x.id!==se.id});S.sel=null;persist();renderSeason()};
+renderSeason();
 var lastToday=fmt(new Date());
 document.addEventListener('visibilitychange',function(){
   if(document.hidden)return;
