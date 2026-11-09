@@ -307,6 +307,7 @@ function renderSeason(){
     $('sinfo').textContent='No season yet. Press "▶ Start season" to begin counting your total kg.';$('sstats').innerHTML='';$('sgoods').innerHTML='';return;
   }
   var t=fmt(new Date()),end=se.end||t,tq=0,tv=0,n=0,gk=[0,0,0,0,0],gv=[0,0,0,0,0];
+  if(!se.end){Object.keys(S.days).forEach(function(k){if(k>end)end=k})}
   Object.keys(S.days).forEach(function(k){
     if(k<se.start||k>end)return;
     var D=S.days[k];n++;tq+=D.tq;tv+=D.tv;
