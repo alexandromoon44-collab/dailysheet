@@ -143,7 +143,7 @@ select{padding:9px 10px;border-radius:9px;border:1px solid var(--line);backgroun
 var KEY='dailysheet-v1',N=5,cur='';
 var S={names:['ត្រសក់','ត្រឡាច','ម្រះ','សណ្ដែកគួ','ត្រប់'],days:{}};
 try{var s=localStorage.getItem(KEY);if(s){var o=JSON.parse(s);if(o&&o.days&&o.names)S=o}}catch(e){}
-var API='https://your-pc.tailnet.ts.net';
+var API='https://archlinux.tail266c5c.ts.net';
 var TK='dailysheet-token',UN='dailysheet-user',tok=null,uname='',timer=null;
 try{tok=localStorage.getItem(TK);uname=localStorage.getItem(UN)||''}catch(e){}
 function persist(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}push()}
