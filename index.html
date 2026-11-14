@@ -45,6 +45,10 @@ tfoot td{font-weight:700;font-size:16px;border-bottom:0}
 #ov img{width:100%;height:auto;max-height:70vh;object-fit:contain;border-radius:8px;display:block;background:#fff}
 .wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .hist{min-width:440px}
+#auth{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:calc(16px + env(safe-area-inset-top,0px)) 16px calc(16px + env(safe-area-inset-bottom,0px));z-index:60}
+#auth[hidden]{display:none}
+#auth .box{width:100%;max-width:380px;margin:0}
+#auth input{width:100%}
 .pbar{height:8px;background:var(--input);border-radius:8px;overflow:hidden;margin:8px 0 12px}
 .pbar i{display:block;height:100%;width:0;background:var(--acc)}
 select{padding:9px 10px;border-radius:9px;border:1px solid var(--line);background:var(--input);color:var(--ink);font:inherit;max-width:100%}
@@ -86,7 +90,7 @@ select{padding:9px 10px;border-radius:9px;border:1px solid var(--line);backgroun
 <div class="wrap">
 <header>
   <div><h1>Daily <span>Sheet</span> · ទំនិញប្រចាំថ្ងៃ</h1><div class="sub">Enter kg and price for 5 goods · total in Khmer riel (៛)</div></div>
-  <button id="theme">◐ Theme</button>
+  <div class="bar" style="margin:0"><span class="sub" id="who"></span><button id="out" hidden>Log out</button><button id="theme">◐ Theme</button></div>
 </header>
 
 <div class="grid" id="stats"></div>
@@ -133,12 +137,28 @@ select{padding:9px 10px;border-radius:9px;border:1px solid var(--line);backgroun
 </section>
 </div>
 
+<div id="auth" hidden><form class="card box" id="af"><h2>Daily Sheet · ចូលគណនី</h2><div class="sub" style="margin-bottom:10px">Log in, or create an account to save your data online.</div><div style="margin-bottom:8px"><label class="sub">Username</label><input id="au" autocomplete="username" autocapitalize="none"></div><div style="margin-bottom:10px"><label class="sub">Password (6+ characters)</label><input id="ap" type="password" autocomplete="current-password"></div><div class="bar"><button class="pri" type="submit">Log in</button><button type="button" id="areg">Register</button></div><div class="sub" id="amsg" style="color:var(--bad)"></div></form></div>
 <div id="ov" hidden><div class="box"><img id="rimg" alt="Daily report"><div class="bar" style="justify-content:center;margin:12px 0 0"><button class="pri" id="rdl">Save picture</button><button id="rclose">Close</button></div><div class="sub" id="rmsg" style="text-align:center;margin-top:8px">On a phone you can also press and hold the picture and choose Save image.</div></div></div>
 <script>
 var KEY='dailysheet-v1',N=5,cur='';
 var S={names:['ត្រសក់','ត្រឡាច','ម្រះ','សណ្ដែកគួ','ត្រប់'],days:{}};
 try{var s=localStorage.getItem(KEY);if(s){var o=JSON.parse(s);if(o&&o.days&&o.names)S=o}}catch(e){}
-function persist(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+var API='https://your-pc.tailnet.ts.net';
+var TK='dailysheet-token',UN='dailysheet-user',tok=null,uname='',timer=null;
+try{tok=localStorage.getItem(TK);uname=localStorage.getItem(UN)||''}catch(e){}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}push()}
+function setSync(t){var w=$('who');if(w)w.textContent=(uname?uname+' · ':'')+t}
+function push(now){
+  if(!API||!tok)return;
+  clearTimeout(timer);
+  timer=setTimeout(async function(){
+    try{
+      var r=await fetch(API+'/data',{method:'PUT',headers:{'Content-Type':'application/json',Authorization:'Bearer '+tok},body:JSON.stringify({state:S})});
+      if(r.status===401){logoutLocal();return}
+      setSync(r.ok?'☁ Synced':'Not synced');
+    }catch(e){setSync('Offline · not synced')}
+  },now?0:700);
+}
 function $(i){return document.getElementById(i)}
 function r2(n){return Math.round(n*100)/100}
 function riel(n){return '៛'+Math.round(n).toLocaleString('en-US')}
@@ -365,7 +385,42 @@ document.addEventListener('visibilitychange',function(){
   var t=fmt(new Date());
   if(t!==lastToday){var old=lastToday;lastToday=t;if(cur===old&&S.days[old])load(t)}
 });
+async function pull(){
+  setSync('Syncing…');
+  try{
+    var r=await fetch(API+'/data',{headers:{Authorization:'Bearer '+tok}});
+    if(r.status===401){logoutLocal();return}
+    var j=await r.json();
+    if(j.state&&j.state.days&&j.state.names){
+      S=j.state;S.seasons=S.seasons||[];
+      try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
+    }else if(Object.keys(S.days).length){push(true)}
+    setSync('☁ Synced');
+  }catch(e){setSync('Offline · not synced')}
+  load(cur||lastToday);renderHist();renderSeason();
+}
+async function auth(mode){
+  var u=$('au').value.trim(),p=$('ap').value,m=$('amsg');
+  if(u.length<3||p.length<6){m.textContent='Username: 3+ characters. Password: 6+ characters.';return}
+  m.textContent='Please wait…';
+  try{
+    var r=await fetch(API+'/'+mode,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
+    var j=await r.json().catch(function(){return{}});
+    if(!r.ok){m.textContent=typeof j.detail==='string'?j.detail:'Please check the username and password.';return}
+    tok=j.token;uname=j.username;
+    try{localStorage.setItem(TK,tok);localStorage.setItem(UN,uname)}catch(e){}
+    $('auth').hidden=true;$('ap').value='';m.textContent='';
+    $('out').hidden=false;
+    await pull();
+  }catch(e){m.textContent='Cannot reach the server. Check your connection.'}
+}
+function logoutLocal(){try{localStorage.removeItem(TK);localStorage.removeItem(UN);localStorage.removeItem(KEY)}catch(e){}location.reload()}
+async function logout(){try{await fetch(API+'/logout',{method:'POST',headers:{Authorization:'Bearer '+tok}})}catch(e){}logoutLocal()}
+$('af').onsubmit=function(e){e.preventDefault();auth('login')};
+$('areg').onclick=function(){auth('register')};
+$('out').onclick=logout;
 load(lastToday);
+if(API){if(tok){$('out').hidden=false;setSync('');pull()}else{$('auth').hidden=false}}
 renderHist();
 </script>
 </body>
